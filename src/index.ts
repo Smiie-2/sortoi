@@ -17,6 +17,7 @@ import { ConflictResolver } from './infrastructure/ConflictResolver.js';
 import { FileOrganizer } from './infrastructure/FileOrganizer.js';
 import { ConflictStrategy } from './common/constants.js';
 import type { IDatabaseService } from './core/types.js';
+import { PathValidator } from './infrastructure/PathValidator.js';
 
 // 🔒 SECURITY: Global unhandled rejection handler
 process.on('unhandledRejection', (reason, promise) => {
@@ -66,11 +67,18 @@ async function runInteractiveMain() {
     }
 
     const categorizationService = new CategorizationService(fileScanner, llmClient, output, progress, fileOrganizer, databaseService, metricsCollector, telemetryService);
+    const pathValidator = new PathValidator();
 
     logger.info('Scanning directory', { directory: options.directory });
-    console.log(chalk.blue(`🔍 Scanning: ${options.directory}`));
-    const files = await fileScanner.scan(options.directory);
+
+    // 🔒 SECURITY: Validate input directory
+    const validatedDirectory = pathValidator.sanitizeAndValidate(options.directory);
+
+    console.log(chalk.blue(`🔍 Scanning: ${validatedDirectory}`));
+    const files = await fileScanner.scan(validatedDirectory);
     logger.info('Directory scan completed', { fileCount: files.length });
+
+    options.directory = validatedDirectory; // Update options with sanitized path
 
     console.log(chalk.bold(`📄 Found ${files.length} files to organize`));
 
@@ -220,6 +228,11 @@ async function main() {
   }
 
   const categorizationService = new CategorizationService(fileScanner, llmClient, output, progress, fileOrganizer, databaseService, metricsCollector, telemetryService);
+  const pathValidator = new PathValidator();
+
+  // 🔒 SECURITY: Validate input directory
+  const validatedDirectory = pathValidator.sanitizeAndValidate(directory);
+  logger.info('Input directory validated', { directory: validatedDirectory });
 
   // In JSON mode, we skip the interactive parts and go straight to business
   if (options.json) {
@@ -227,7 +240,7 @@ async function main() {
     await historyService.load();
     const sessionId = historyService.startSession();
 
-    const categorizedFiles = await categorizationService.categorizeDirectory(directory, {
+    const categorizedFiles = await categorizationService.categorizeDirectory(validatedDirectory, {
       silent: true,
       categorizationOptions: {
         model: options.model,
@@ -240,7 +253,7 @@ async function main() {
     let results;
     if (!options.dryRun) {
       results = await fileOrganizer.organize(
-        directory,
+        validatedDirectory,
         categorizedFiles,
         ConflictStrategy.RENAME,
         false,
@@ -252,7 +265,7 @@ async function main() {
       results = await categorizationService.moveFiles(categorizedFiles, {
         dryRun: options.dryRun,
         useSubcategories: options.subcategories !== false,
-        baseDirectory: directory,
+        baseDirectory: validatedDirectory,
       });
     }
 
@@ -268,8 +281,8 @@ async function main() {
   await historyService.load();
   const sessionId = historyService.startSession();
 
-  log(chalk.blue(`🔍 Scanning: ${directory}`));
-  const categorizedFiles = await categorizationService.categorizeDirectory(directory, {
+  log(chalk.blue(`🔍 Scanning: ${validatedDirectory}`));
+  const categorizedFiles = await categorizationService.categorizeDirectory(validatedDirectory, {
     categorizationOptions: {
       model: options.model,
       language: options.language,
@@ -289,7 +302,7 @@ async function main() {
 
   if (!options.dryRun) {
     const results = await fileOrganizer.organize(
-      directory,
+      validatedDirectory,
       categorizedFiles,
       ConflictStrategy.RENAME,
       false,
@@ -310,7 +323,7 @@ async function main() {
     await categorizationService.moveFiles(categorizedFiles, {
       dryRun: options.dryRun,
       useSubcategories: options.subcategories !== false,
-      baseDirectory: directory,
+      baseDirectory: validatedDirectory,
     });
   }
 

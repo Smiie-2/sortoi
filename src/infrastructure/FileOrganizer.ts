@@ -36,7 +36,7 @@ export class FileOrganizer implements IFileOrganizer {
   constructor(
     private readonly conflictResolver: IConflictResolver,
     private readonly historyService?: IHistoryService
-  ) {}
+  ) { }
 
   async organize(
     baseDirectory: string,
@@ -50,20 +50,20 @@ export class FileOrganizer implements IFileOrganizer {
     for (const file of categorizedFiles) {
       try {
         const result = await this.organizeFile(
-          baseDirectory, 
-          file, 
-          conflictStrategy, 
+          baseDirectory,
+          file,
+          conflictStrategy,
           dryRun,
           sessionId
         );
         results.push(result);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logger.error('Failed to organize file', { 
-          file: file.path, 
-          error: errorMessage 
+        logger.error('Failed to organize file', {
+          file: file.path,
+          error: errorMessage
         });
-        
+
         results.push({
           success: false,
           sourcePath: file.path,
@@ -82,12 +82,20 @@ export class FileOrganizer implements IFileOrganizer {
     dryRun: boolean,
     sessionId?: string
   ): Promise<FileOperationResult> {
-    const categoryPath = file.subcategory 
+    const categoryPath = file.subcategory
       ? path.join(baseDirectory, file.category, file.subcategory)
       : path.join(baseDirectory, file.category);
-    
+
+    // 🔒 SECURITY: Ensure category doesn't escape the base directory
+    const resolvedCategoryPath = path.resolve(categoryPath);
+    const resolvedBaseDir = path.resolve(baseDirectory);
+
+    if (!resolvedCategoryPath.startsWith(resolvedBaseDir)) {
+      throw new Error(`Security breach: AI suggested category "${file.category}" escapes the base directory.`);
+    }
+
     const fileName = path.basename(file.path);
-    let destinationPath = path.join(categoryPath, fileName);
+    let destinationPath = path.join(resolvedCategoryPath, fileName);
 
     logger.debug('Organizing file', {
       source: file.path,
@@ -139,7 +147,7 @@ export class FileOrganizer implements IFileOrganizer {
 
     // Move the file
     await fs.rename(file.path, destinationPath);
-    
+
     // Record move operation in history
     if (sessionId && this.historyService) {
       this.historyService.recordOperation(sessionId, {
@@ -149,10 +157,10 @@ export class FileOrganizer implements IFileOrganizer {
         timestamp: new Date(),
       });
     }
-    
-    logger.info('File organized successfully', { 
-      from: file.path, 
-      to: destinationPath 
+
+    logger.info('File organized successfully', {
+      from: file.path,
+      to: destinationPath
     });
 
     return {

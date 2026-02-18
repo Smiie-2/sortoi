@@ -74,7 +74,7 @@ export class GeminiClient implements ILLMClient {
         if ('statusCode' in error) errorDetails.statusCode = (error as any).statusCode;
       }
 
-      logger.error('Gemini API error', errorDetails);
+      logger.error('Gemini API error', this.sanitizeError(errorDetails));
       console.error(`\n🔍 GEMINI ERROR for ${filePath}:\n  Model: ${options.model || 'gemini-1.5-flash'}\n  Error: ${error instanceof Error ? error.message : String(error)}`);
 
       // Re-throw with more context
@@ -83,6 +83,36 @@ export class GeminiClient implements ILLMClient {
       }
       throw error;
     }
+  }
+
+  /**
+   * 🔒 SECURITY: Redact sensitive information (API keys) from error objects
+   */
+  private sanitizeError(details: Record<string, unknown>): Record<string, unknown> {
+    const sanitized = { ...details };
+    const secretKeys = ['apiKey', 'key', 'token', 'authorization', 'password'];
+
+    // Recursive sanitization
+    const redact = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+
+      for (const key in obj) {
+        if (secretKeys.some(s => key.toLowerCase().includes(s))) {
+          obj[key] = '[REDACTED]';
+        } else if (typeof obj[key] === 'object') {
+          redact(obj[key]);
+        } else if (typeof obj[key] === 'string') {
+          // Check for strings that look like API keys using a heuristic
+          // (Alphanumeric strings between 20-100 chars often found in AI providers)
+          if (/^[A-Za-z0-9_-]{30,100}$/.test(obj[key])) {
+            obj[key] = '[REDACTED (Heuristic)]';
+          }
+        }
+      }
+    };
+
+    redact(sanitized);
+    return sanitized;
   }
 }
 

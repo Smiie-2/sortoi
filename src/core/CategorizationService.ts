@@ -234,6 +234,16 @@ export class CategorizationService {
     const fileName = getFileName(file.path);
     parts.push(fileName);
 
-    return parts.join(path.sep);
+    const targetPath = parts.join(path.sep);
+
+    // 🔒 SECURITY: Ensure target path doesn't escape the base directory
+    const resolvedTargetPath = path.resolve(targetPath);
+    const resolvedBaseDir = path.resolve(options.baseDirectory);
+
+    if (!resolvedTargetPath.startsWith(resolvedBaseDir)) {
+      throw new Error(`Security breach: AI suggested category "${file.category}" escapes the base directory.`);
+    }
+
+    return resolvedTargetPath;
   }
 }
