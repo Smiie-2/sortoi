@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CategorizationService } from './CategorizationService.js';
 import type { IFileScanner, ILLMClient, IDatabaseService, CategorizedFile, IOutputPort, IProgressReporter, IFileOrganizer } from './types.js';
 import { getFileHash } from '../common/utils/fileUtils.js';
+import path from 'path';
 
 // Mock the file utils module
 vi.mock('../common/utils/fileUtils.js', () => ({
@@ -47,16 +48,16 @@ describe('CategorizationService', () => {
   beforeEach(() => {
     // Reset all mocks before each test
     vi.resetAllMocks();
-    
+
     // Setup getFileHash mock to return consistent hash
     vi.mocked(getFileHash).mockResolvedValue('mockedhash123');
-    
+
     service = new CategorizationService(mockFileScanner, mockLlmClient, mockOutputPort, mockProgressReporter, mockFileOrganizer, mockDatabaseService);
   });
 
   it('should categorize a single file using the LLM client when not in cache', async () => {
-    const directory = '/test-dir';
-    const filePath = `${directory}/test.txt`;
+    const directory = path.join(process.cwd(), 'test-dir');
+    const filePath = path.join(directory, 'test.txt');
     const llmResult: CategorizedFile = {
       path: filePath,
       category: 'Documents',
@@ -79,7 +80,7 @@ describe('CategorizationService', () => {
     expect(result[0]?.hash).toBe('mockedhash123'); // Hash added by service
     expect(mockFileScanner.scan).toHaveBeenCalledWith(directory);
     expect(mockDatabaseService.getCachedCategorization).toHaveBeenCalledWith(filePath, 'mockedhash123');
-    expect(mockLlmClient.categorize).toHaveBeenCalledWith(filePath);
+    expect(mockLlmClient.categorize).toHaveBeenCalledWith(filePath, undefined);
     expect(mockDatabaseService.setCachedCategorization).toHaveBeenCalledWith(
       expect.objectContaining({
         path: filePath,
@@ -90,8 +91,8 @@ describe('CategorizationService', () => {
   });
 
   it('should use the cached result if available', async () => {
-    const directory = '/test-dir';
-    const filePath = `${directory}/image.jpg`;
+    const directory = path.join(process.cwd(), 'test-dir');
+    const filePath = path.join(directory, 'image.jpg');
     const cachedCategorization: CategorizedFile = {
       path: filePath,
       category: 'Images',
@@ -119,35 +120,35 @@ describe('CategorizationService', () => {
   describe('Edge Cases', () => {
     it('should handle empty directory', async () => {
       vi.mocked(mockFileScanner.scan).mockResolvedValue([]);
-      const result = await service.categorizeDirectory('/empty-dir');
+      const result = await service.categorizeDirectory(path.join(process.cwd(), 'empty-dir'));
       expect(result).toEqual([]);
     });
 
     it('should handle all files failing', async () => {
-      vi.mocked(mockFileScanner.scan).mockResolvedValue(['/file1.txt', '/file2.txt']);
+      vi.mocked(mockFileScanner.scan).mockResolvedValue([path.join(process.cwd(), 'file1.txt'), path.join(process.cwd(), 'file2.txt')]);
       vi.mocked(mockLlmClient.categorize).mockRejectedValue(new Error('API Error'));
-      
-      const result = await service.categorizeDirectory('/test-dir');
+
+      const result = await service.categorizeDirectory(path.join(process.cwd(), 'test-dir'));
       expect(result).toEqual([]);
     });
 
     it('should continue processing after partial failures', async () => {
-      vi.mocked(mockFileScanner.scan).mockResolvedValue(['/file1.txt', '/file2.txt']);
+      vi.mocked(mockFileScanner.scan).mockResolvedValue([path.join(process.cwd(), 'file1.txt'), path.join(process.cwd(), 'file2.txt')]);
       vi.mocked(mockLlmClient.categorize)
         .mockRejectedValueOnce(new Error('Failed'))
-        .mockResolvedValueOnce({ path: '/file2.txt', category: 'Docs', hash: 'hash2' });
-      
-      const result = await service.categorizeDirectory('/test-dir');
+        .mockResolvedValueOnce({ path: path.join(process.cwd(), 'file2.txt'), category: 'Docs', hash: 'hash2' });
+
+      const result = await service.categorizeDirectory(path.join(process.cwd(), 'test-dir'));
       expect(result).toHaveLength(1);
-      expect(result[0]?.path).toBe('/file2.txt');
+      expect(result[0]?.path).toBe(path.join(process.cwd(), 'file2.txt'));
     });
 
     it('should respect silent mode', async () => {
-      vi.mocked(mockFileScanner.scan).mockResolvedValue(['/file1.txt']);
-      vi.mocked(mockLlmClient.categorize).mockResolvedValue({ path: '/file1.txt', category: 'Docs', hash: 'hash1' });
-      
-      await service.categorizeDirectory('/test-dir', { silent: true });
-      
+      vi.mocked(mockFileScanner.scan).mockResolvedValue([path.join(process.cwd(), 'file1.txt')]);
+      vi.mocked(mockLlmClient.categorize).mockResolvedValue({ path: path.join(process.cwd(), 'file1.txt'), category: 'Docs', hash: 'hash1' });
+
+      await service.categorizeDirectory(path.join(process.cwd(), 'test-dir'), { silent: true });
+
       expect(mockProgressReporter.start).not.toHaveBeenCalled();
       expect(mockProgressReporter.increment).not.toHaveBeenCalled();
       expect(mockProgressReporter.stop).not.toHaveBeenCalled();
