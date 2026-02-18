@@ -119,3 +119,7 @@ checkpoints/
 *.bak
 *.backup
 *.old
+
+# Worktrees
+.worktrees/
+worktrees/
