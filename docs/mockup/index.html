@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sortoi GUI Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --sidebar-bg: #0b1120;
+            --accent-primary: #38bdf8;
+            --accent-secondary: #818cf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        aside {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1rem;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            padding: 0 0.5rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: var(--transition);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-item.active {
+            color: var(--text-primary);
+            background-color: rgba(56, 189, 248, 0.1);
+            box-shadow: inset 2px 0 0 var(--accent-primary);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Main Content Styles */
+        main {
+            flex: 1;
+            padding: 2rem 3rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Cards & UI Elements */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .folder-picker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .folder-picker:hover {
+            border-color: var(--accent-primary);
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        /* Preview Table */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .path-chip {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        .arrow {
+            color: var(--accent-primary);
+            margin: 0 0.5rem;
+        }
+
+        /* Animated Progress */
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            width: 65%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background-color: var(--sidebar-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .badge {
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside>
+        <div class="logo">
+            <div class="logo-icon">S</div>
+            <span class="logo-text">Sortoi</span>
+        </div>
+
+        <nav>
+            <div class="nav-item active" onclick="showView('sort')">
+                <span>🔄</span> Sort
+            </div>
+            <div class="nav-item" onclick="showView('history')">
+                <span>📜</span> History
+            </div>
+            <div class="nav-item" onclick="showView('settings')">
+                <span>⚙️</span> Settings
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span>v2.1.0-beta</span>
+            <span style="color: var(--success)">● System Ready</span>
+        </div>
+    </aside>
+
+    <main>
+        <!-- SORT VIEW -->
+        <section id="sort-view" class="view-section active">
+            <header>
+                <h1>Organize Your Files</h1>
+                <p class="subtitle">AI-powered categorization for your cluttered directories.</p>
+            </header>
+
+            <div class="card" id="upload-card">
+                <div class="folder-picker">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                    <h3 style="margin-bottom: 0.5rem;">Select Folder to Scan</h3>
+                    <p class="subtitle" style="text-align: center;">Click to browse or drag and drop a folder here</p>
+                    <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="processFiles()">Start AI
+                        Analysis</button>
+                </div>
+
+                <div class="config-grid" style="margin-top: 2rem; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label>Context Hints (Optional)</label>
+                        <input type="text" placeholder="e.g. 'These are university notes from 2023'">
+                    </div>
+                    <div class="form-group">
+                        <label>Folder Structure Preset</label>
+                        <input type="text" placeholder="e.g. 'Year/Category/Type'" value="Category/Subcategory">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREVIEW STATE (Simulated) -->
+            <div id="preview-section" style="display: none;">
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3>Proposed Move Map</h3>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn btn-ghost btn-sm">Deselect All</button>
+                            <button class="btn btn-primary btn-sm" onclick="executeMoves()">Apply 12 Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" checked></th>
+                                    <th>File Name</th>
+                                    <th>Confidence</th>
+                                    <th>Proposed Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="checkbox" checked></td>
+                                    <td><span class="path-chip">invoice_july.pdf</span></td>
+                                    <td><span class="badge badge-success">98% Match</span></td>
+                                    <td>Documents <span class="arrow">→</span> <span
+                                            class="path-chip">Finance/2023/Invoices</span></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" checked></td>
+                                    <td><span class="path-chip">photo_dsc_001.jpg</span></td>
+                                    <td><span class="badge badge-success">92% Match</span></td>
+                                    <td>Downloads <span class="arrow">→</span> <span
+                                            class="path-chip">Photos/Vacation_2024</span></td>
+                                </tr>
+                                <tr>
+                                    <td><input type="checkbox" checked></td>
+                                    <td><span class="path-chip">resume_final_v2.docx</span></td>
+                                    <td><span class="badge badge-success">99% Match</span></td>
+                                    <td>Desktop <span class="arrow">→</span> <span
+                                            class="path-chip">Work/Applications</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROCESSING STATE (Simulated) -->
+            <div id="processing-section" style="display: none;">
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3>Sorting in Progress...</h3>
+                        <span id="progress-percent">65%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill"></div>
+                    </div>
+                    <div class="subtitle" style="font-size: 0.875rem;">
+                        Moving <span style="color: var(--text-primary)">lecture_notes.pptx</span> to <span
+                            style="color: var(--text-primary)">Education/Semester_2</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- HISTORY VIEW -->
+        <section id="history-view" class="view-section">
+            <header>
+                <h1>Sort History</h1>
+                <p class="subtitle">Review and undo your past organization sessions.</p>
+            </header>
+
+            <div class="card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Session ID</th>
+                                <th>Files Moved</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Feb 18, 2026, 21:09</td>
+                                <td><span class="path-chip">sess_8f2a1b</span></td>
+                                <td>142 Files</td>
+                                <td><span style="color: var(--success)">Applied</span></td>
+                                <td><button class="btn btn-ghost"
+                                        style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Rollback</button></td>
+                            </tr>
+                            <tr>
+                                <td>Feb 16, 2026, 15:33</td>
+                                <td><span class="path-chip">sess_4c39e2</span></td>
+                                <td>38 Files</td>
+                                <td><span style="color: var(--success)">Applied</span></td>
+                                <td><button class="btn btn-ghost"
+                                        style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Rollback</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS VIEW -->
+        <section id="settings-view" class="view-section">
+            <header>
+                <h1>Settings</h1>
+                <p class="subtitle">Configure your Gemini API and app preferences.</p>
+            </header>
+
+            <div class="card">
+                <div class="config-grid">
+                    <div>
+                        <div class="form-group">
+                            <label>Google Gemini API Key</label>
+                            <input type="password" value="••••••••••••••••••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label>Default Model</label>
+                            <select>
+                                <option>Gemini 2.0 Flash (Recommended)</option>
+                                <option>Gemini 1.5 Pro</option>
+                                <option>Gemini 2.0 Flash-Lite</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Language Recognition</label>
+                            <select>
+                                <option>Auto-Detect</option>
+                                <option>English</option>
+                                <option>Swedish</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1rem; display: flex; justify-content: flex-end;">
+                    <button class="btn btn-primary">Save Configuration</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function showView(viewId) {
+            // Update Navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.innerText.toLowerCase().includes(viewId)) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Update Section
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(viewId + '-view').classList.add('active');
+        }
+
+        function processFiles() {
+            document.getElementById('upload-card').style.display = 'none';
+            document.getElementById('processing-section').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('processing-section').style.display = 'none';
+                document.getElementById('preview-section').style.display = 'block';
+            }, 1500);
+        }
+
+        function executeMoves() {
+            alert('Simulation: AI moves have been successfully applied to your disk!');
+            location.reload();
+        }
+    </script>
+</body>
+
+</html>
