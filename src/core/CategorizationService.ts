@@ -1,4 +1,4 @@
-import type { CategorizedFile, IFileScanner, ILLMClient, IDatabaseService, IOutputPort, IProgressReporter, IFileOrganizer } from './types.js';
+import type { CategorizedFile, IFileScanner, ILLMClient, IDatabaseService, IOutputPort, IProgressReporter, IFileOrganizer, CategorizationOptions } from './types.js';
 import path from 'path';
 import { getFileName } from '../common/utils/pathUtils.js';
 import { getFileHash } from '../common/utils/fileUtils.js';
@@ -18,33 +18,34 @@ export class CategorizationService {
     private readonly databaseService?: IDatabaseService,
     private readonly metricsCollector?: IMetricsCollector,
     private readonly telemetryService?: ITelemetryService
-  ) {}
+  ) { }
 
-  async categorizeDirectory(directory: string, options: { silent?: boolean, concurrency?: number } = {}): Promise<CategorizedFile[]> {
+  async categorizeDirectory(directory: string, options: { silent?: boolean, concurrency?: number, categorizationOptions?: CategorizationOptions } = {}): Promise<CategorizedFile[]> {
     const files = await this.fileScanner.scan(directory);
     const limit = pLimit(options.concurrency || LIMITS.MAX_CONCURRENCY);
-    
+
     if (!options.silent) {
       this.progress.start(files.length, 0);
     }
 
-    const categorizationPromises = files.map((file) => 
-      limit(() => this.categorizeSingleFileWithRetry(file, options.silent))
+    const categorizationPromises = files.map((file) =>
+      limit(() => this.categorizeSingleFileWithRetry(file, options.silent, LIMITS.MAX_RETRIES, options.categorizationOptions))
     );
-    
+
     const results = await Promise.all(categorizationPromises);
 
     if (!options.silent) {
       this.progress.stop();
     }
-    
+
     return results.filter((result): result is CategorizedFile => result !== null);
   }
 
   private async categorizeSingleFileWithRetry(
-    file: string, 
+    file: string,
     silent?: boolean,
-    retries: number = LIMITS.MAX_RETRIES
+    retries: number = LIMITS.MAX_RETRIES,
+    options?: CategorizationOptions
   ): Promise<CategorizedFile | null> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
@@ -59,9 +60,9 @@ export class CategorizationService {
           }
         }
 
-        const categorizedFile = await this.llmClient.categorize(file);
+        const categorizedFile = await this.llmClient.categorize(file, options);
         const fileWithHash = { ...categorizedFile, hash };
-        
+
         if (this.databaseService) {
           await this.databaseService.setCachedCategorization(fileWithHash);
         }
@@ -70,7 +71,7 @@ export class CategorizationService {
         return fileWithHash;
       } catch (error) {
         const categorizationError = this.classifyError(error, file);
-        
+
         // 🚀 CRITICAL: Report unknown errors to telemetry for investigation
         if (categorizationError.reason === 'unknown' && this.telemetryService) {
           await this.telemetryService.reportUnknownError(error, file, {
@@ -79,12 +80,12 @@ export class CategorizationService {
             hasCache: !!this.databaseService,
           });
         }
-        
+
         if (categorizationError.reason === 'network' && attempt < retries) {
           await this.delay(RETRY.BASE_DELAY_MS * attempt);
           continue;
         }
-        
+
         if (!silent) this.progress.increment();
         this.metricsCollector?.recordFailure(categorizationError.reason);
         this.output.error(`\n✗ Failed to categorize ${getFileName(file)}: ${categorizationError.message}`);
@@ -97,56 +98,56 @@ export class CategorizationService {
   private classifyError(error: unknown, filePath: string): CategorizationError {
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
-      
+
       // Database errors (should be rare after migration)
       if (message.includes('no such column') ||
-          message.includes('sqlite') ||
-          message.includes('database')) {
+        message.includes('sqlite') ||
+        message.includes('database')) {
         return new CategorizationError(filePath, 'unknown', `Database error: ${error.message}`, error);
       }
-      
+
       // Network errors
-      if (message.includes('network') || 
-          message.includes('timeout') || 
-          message.includes('fetch failed') ||
-          message.includes('econnrefused') ||
-          message.includes('enotfound') ||
-          message.includes('etimedout')) {
+      if (message.includes('network') ||
+        message.includes('timeout') ||
+        message.includes('fetch failed') ||
+        message.includes('econnrefused') ||
+        message.includes('enotfound') ||
+        message.includes('etimedout')) {
         return new CategorizationError(filePath, 'network', 'Network error', error);
       }
-      
+
       // API errors
-      if (message.includes('rate limit') || 
-          message.includes('quota') ||
-          message.includes('429')) {
+      if (message.includes('rate limit') ||
+        message.includes('quota') ||
+        message.includes('429')) {
         return new CategorizationError(filePath, 'api_limit', 'API rate limit exceeded', error);
       }
-      
+
       // Authentication errors
       if (message.includes('unauthorized') ||
-          message.includes('invalid api key') ||
-          message.includes('403') ||
-          message.includes('401')) {
+        message.includes('invalid api key') ||
+        message.includes('403') ||
+        message.includes('401')) {
         return new CategorizationError(filePath, 'auth', 'Authentication error', error);
       }
-      
+
       // API errors (general)
       if (message.includes('api error') ||
-          message.includes('500') ||
-          message.includes('502') ||
-          message.includes('503')) {
+        message.includes('500') ||
+        message.includes('502') ||
+        message.includes('503')) {
         return new CategorizationError(filePath, 'api_error', 'API server error', error);
       }
     }
-    
+
     // Log the unknown error for debugging
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     // Use a more descriptive unknown error message
     return new CategorizationError(
-      filePath, 
-      'unknown', 
-      `Unknown error: ${errorMessage}`, 
+      filePath,
+      'unknown',
+      `Unknown error: ${errorMessage}`,
       error as Error
     );
   }

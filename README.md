@@ -1,269 +1,106 @@
-<img src="docs/screenshots/logo-sortoi.png" alt="Sortoi Logo" width="64" height="64">
+# 🤖 Sortoi — Enhanced Edition
 
-# Sortoi
+> The intelligent AI file organizer you actually have control over.
 
-AI-powered intelligent file organizer.  
-Crafted with Kilo Code, GitHub Copilot, Claude Web, and the strategic guidance of a human developer.
-
-[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-22-green)](https://nodejs.org/)
-
-[Quick Start](#-quick-start) • [Usage Guide](#-usage-guide) • [Vibe Coding Methodology](docs/VIBE_CODING_WITH_REFERENCES.md) • [Report Issues](https://github.com/Atypical-Playworks/sortoi/issues)
+Sortoi is an AI-powered CLI tool that uses Google Gemini to automatically categorize and organize your files. This fork adds significant power-user features, deeper customization, and a refined interactive workflow compared to the original version.
 
 ---
 
-## 🎯 What is Sortoi?
+## ✨ What's New in This Fork?
 
-**Sortoi** is an intelligent CLI tool that uses Google Gemini AI to automatically categorize and organize your files. Beyond simple file extensions, it understands content and context to create meaningful, hierarchical folder structures.
+This version of Sortoi has been significantly enhanced to give users more control over how the AI perceives and organizes their files.
 
-### See Sortoi in Action
+### 🌎 Language Support
+*   **English & Swedish Support**: Specifically optimized for Swedish and English file names.
+*   **Auto-detection**: Smartly detects the primary language of your files to ensure the AI understands the semantic meaning of your documents.
 
-<table>
-  <tr>
-    <td><img src="docs/screenshots/interactive-mode.jpg" alt="Sortoi Interactive Mode - User-friendly guided setup with step-by-step prompts" width="400"/></td>
-    <td><img src="docs/screenshots/ai-categorization.jpg" alt="Sortoi AI Categorization - Gemini AI automatically organizing files into smart categories" width="400"/></td>
-  </tr>
-  <tr>
-    <td align="center"><em>🎯 Interactive Mode - Guided Setup</em></td>
-    <td align="center"><em>🤖 AI Categorizing Your Files</em></td>
-  </tr>
-</table>
+### 🧠 Advanced Model Selection
+Choose exactly which brain you want to use for categorization:
+*   **Gemini 2.0 Flash**: The default balance of speed and intelligence.
+*   **Gemini 2.0 Flash-Lite**: Optimized for extreme speed and low cost.
+*   **Gemini 2.5 Flash**: Higher reasoning capabilities for complex file sets.
+*   **Gemini 2.5 Pro**: The ultimate model for deep document understanding.
 
-### For Everyone
+### 🎯 Deep Context Injection
+Tell the AI exactly what these files are! You can now provide **context** (e.g., "These are university course materials from 2023" or "These are raw unedited vacation photos from Italy") to guide the categorization logic.
 
-- 📁 **Home Users**: Tame your chaotic Downloads folder in seconds
-- 💼 **Professionals**: Organize projects, assets, and archives intelligently
-- 🎨 **Creators**: Sort media files by content, not just extension
+### 📁 Custom Folder Structures
+Don't settle for the standard "Category/Subcategory" layout. You can now define a **Folder Structure Preset** (e.g., `Year/Project/Filetype`) directly in the prompts, and the AI will adapt its categorization to fit your personal workflow.
 
-### ✨ Key Features
+### 🛡️ Refined Preview Mode
+*   **Visual Move Map**: See exactly where every file is going with the new `source → destination` mapping.
+*   **Apply After Preview**: You no longer have to quit and restart in "Live" mode. Once you see the preview and like it, just hit `Y` to apply the changes immediately.
 
-- 🧠 **AI-Powered**: Uses Google Gemini 2.0 Flash for deep file understanding
-- 📂 **Smart Organization**: Creates Category/Subcategory folder structures
-- ⚡ **Lightning Fast**: Complete analysis in seconds with caching
-- 🛡️ **Safe by Default**: Dry-run mode lets you preview before moving
-- 🔄 **Undo System**: Full history tracking with one-command rollback
-- 🎯 **Two Modes**: Interactive (guided) or CLI (advanced)
-- 🆓 **Forever Free**: No sign-up, just your Google AI API key
+### 🔍 Pro Debugging
+*   Enhanced error logs capture full API responses (Status Codes, Cause, Data), helping you diagnose API key or quota issues with precision.
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 1. Requirements
+*   **Node.js 18+**
+*   **Google AI API Key** — Get one for free at [Google AI Studio](https://aistudio.google.com/app/apikey)
+
+### 2. Setup
 ```bash
-Node.js 18+ | pnpm or npm | Google AI API key
-```
-Get your API key: [Google AI Studio](https://aistudio.google.com/app/apikey)
-
-### Installation
-
-```bash
-# Global installation (recommended)
-npm install -g sortoi
-
-# Or with pnpm
-pnpm add -g sortoi
+git clone https://github.com/Smiie-2/Sortoi.git
+cd Sortoi/sortoi
+pnpm install
+pnpm run build
 ```
 
-### First Run
-
+### 3. Run
+Launch the guided experience:
 ```bash
-# Interactive mode (easiest)
-sortoi
-
-# The tool will guide you through:
-# 1. Enter your Google AI API key
-# 2. Select directory to organize
-# 3. Choose preview or live mode
-# 4. Watch the magic happen ✨
+pnpm run dev
 ```
 
 ---
 
-## 💻 Usage Guide
+## 🛠 Usage Options
 
-### 🎯 Interactive Mode (Beginner-Friendly)
+### Interactive Mode (Recommended)
+Simply run `sortoi` (or `pnpm run dev`) and follow the beautiful, color-coded prompts.
 
-Just run `sortoi` and follow the prompts:
-
+### CLI Flags (Advanced)
+Directly control Sortoi from your terminal:
 ```bash
-sortoi
-```
-
-**What you'll do:**
-1. 📂 **Select Directory**: Enter path like `C:\Users\YourName\Downloads`
-2. 🎯 **Choose Mode**: Preview (safe) or Live (organize now)
-3. 📁 **Configure**: Enable subcategories, caching
-4. ✨ **Watch**: AI categorizes and organizes your files
-
-**Example:**
-```
-🚀 Welcome to Sortoi
-
-📂 Directory path: C:\Users\Milumon\Downloads
-🎯 Mode: 1. Preview (safe) or 2. Live
-Select: 1
-
-🔍 Scanning... Found 42 files
-� Analyzing with AI...
-
-✨ Preview - Would organize:
-  invoice.pdf → Documents/Invoices/
-  vacation.jpg → Images/Photos/
-  tutorial.mp4 → Videos/Educational/
-```
-
----
-
-### ⚡ CLI Mode (Power Users)
-
-Direct commands for advanced workflows:
-
-#### Basic Commands
-
-```bash
-# Organize directory
-sortoi /path/to/folder
-
-# Preview first (safe)
-sortoi ~/Downloads --dry-run
-
-# Flat structure (no subcategories)
-sortoi ~/Documents --no-subcategories
-
-# With custom cache database
-sortoi ~/Projects --db ./my-cache.db
-```
-
-#### Advanced Features
-
-```bash
-# History & Rollback
-sortoi history list                    # View all sessions
-sortoi history show <session-id>       # Details of a session
-sortoi history rollback <session-id>   # Undo organization
-
-# Verbose logging
-sortoi ~/Downloads --verbose
-
-# JSON output (for scripts)
-sortoi ~/Downloads --json
-```
-
----
-
-### 📋 All CLI Options
-
-```
 sortoi [directory] [options]
 
-Arguments:
-  directory                 Path to organize
-
 Options:
-  -V, --version            Version number
-  -i, --interactive        Interactive mode (guided)
-  -d, --db <path>          Cache database path
-  --no-subcategories       Flat structure (Category only)
-  --dry-run                Preview without moving files
-  --verbose                Detailed logging
-  --json                   JSON output
-  -h, --help               Show help
+  -l, --language <lang>    Specify "English", "Swedish", or "Auto"
+  -m, --model <name>       Gemini model name (e.g., gemini-2.0-flash)
+  -c, --context <context>  Provide context about your files
+  -p, --preset <structure> Define desired folder structure (e.g. "Year/Subject/Type")
+  --dry-run                Preview proposed moves without applying them
+```
 
-History Commands:
-  sortoi history list                  List all sessions
-  sortoi history show <id>             Show session details
-  sortoi history rollback <id>         Undo organization
+### Rollback & History
+Made a mistake? Every session is tracked.
+```bash
+pnpm history list                   # View past organization sessions
+pnpm history rollback <session-id>  # Undo a specific session perfectly
 ```
 
 ---
 
-### 🎨 Common Scenarios
+## 🏗 Architecture
+This project is built on **Clean Architecture** principles, ensuring that the core logic is divorced from the implementation details. 
 
-#### Scenario 1: First Time - Preview Mode
-```bash
-sortoi ~/Downloads --dry-run
-```
-**Output:**
-```
-📄 Found 15 files
+*   **Core**: Domain logic, types, and the Categorization orchestrator.
+*   **App**: CLI and Interactive prompt handlers.
+*   **Infrastructure**: Gemini API Client, File Scanner, SQLite Cache, and History Rollback.
 
-DRY RUN - Would organize:
-  invoice-2024.pdf → Documents/Invoices/
-  beach.jpg → Images/Photos/
-  tutorial.mp4 → Videos/Educational/
-```
-
-#### Scenario 2: Organize with Caching
-```bash
-sortoi ~/Documents --db ~/cache.db
-```
-**Benefit:** 10x faster on re-runs, only analyzes changed files
-
-#### Scenario 3: Flat Structure
-```bash
-sortoi ~/Projects --no-subcategories
-```
-**Result:** Files sorted into main categories only (no subcategories)
-
-#### Scenario 4: Made a Mistake? Rollback!
-```bash
-# Organize
-sortoi ~/Downloads
-
-# Oops! Undo it
-sortoi history list
-sortoi history rollback <session-id>
-```
-
-#### Scenario 5: JSON for Automation
-```bash
-sortoi ~/Downloads --json > results.json
-```
-**Use case:** Integrate with other tools, scripts, or dashboards
+*For a deep dive into the technical structure, see [ARCHITECTURE.md](./docs/ARCHITECTURE.md).*
 
 ---
 
-## 🏗️ Architecture
-
-Built with production-ready technologies:
-
-- **TypeScript 5** - End-to-end type safety
-- **Google Gemini AI 2.0 Flash** - Intelligent categorization
-- **SQLite** - Smart caching with hash validation
-- **Clean Architecture** - SOLID principles, scalable structure
-- **Node.js 22** - Modern runtime with ESM support
+## 📄 Credits
+*   **Original Creator**: [Miluska Romero](https://github.com/Milumon)
+*   **Enhanced Fork**: [Smiie-2](https://github.com/Smiie-2)
 
 ---
 
-## 🎯 How It Works
-
-1. **Scan**: Reads all files in the directory
-2. **Hash**: Generates SHA-256 hash for cache validation
-3. **Analyze**: AI categorizes files (or uses cached result)
-4. **Organize**: Creates folder structure and moves files
-5. **Track**: Records operation in history for rollback
-
-**Smart Caching:** Only re-analyzes files that changed (hash mismatch)
-
----
-
-## 📄 License
-
-**MIT License** - Open Source
-
-Sortoi is free and open source software. Feel free to use, modify, and distribute it.
-
-See the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Credits
-
-> **Built for those who need it. By someone who did.**
-
-*I built this because I needed to organize my files. My 'Downloads' folder was a complete mess, and no existing tool really helped me.*
-
-**A project by [Atypical-Playworks](https://github.com/Atypical-Playworks)**  
-**Developed by [Miluska Romero](https://github.com/Milumon)**
+## ⚖️ License
+Licensed under the **MIT License**. Use it, fork it, make your files happy.

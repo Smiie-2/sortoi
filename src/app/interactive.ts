@@ -2,9 +2,10 @@ import * as fs from 'fs/promises';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import { PathValidator } from '../infrastructure/PathValidator.js';
+import type { CategorizationOptions } from '../core/types.js';
 
 // Helper functions for interactive input
-function askYesNo(question: string, defaultValue: boolean = true): Promise<boolean> {
+export function askYesNo(question: string, defaultValue: boolean = true): Promise<boolean> {
   return new Promise((resolve) => {
     const rl = readline.createInterface({
       input: process.stdin,
@@ -71,6 +72,7 @@ export interface InteractiveOptions {
   useSubcategories: boolean;
   dbPath?: string;
   json?: boolean;
+  categorizationOptions: CategorizationOptions;
 }
 
 export async function runInteractiveMode(): Promise<InteractiveOptions> {
@@ -98,12 +100,52 @@ export async function runInteractiveMode(): Promise<InteractiveOptions> {
   // Additional options
   const useSubcategories = await askYesNo('Create subfolders for categories?', true);
 
+  // New options
+  console.log(chalk.bold.blue('\n🔧 Categorization Settings:'));
+
+  // Language selection
+  console.log(chalk.bold('\n🌐 Expected language in the files:'));
+  console.log(`  1. ${chalk.cyan('English')}`);
+  console.log(`  2. ${chalk.cyan('Swedish')}`);
+  console.log(`  3. ${chalk.cyan('Auto-detect')}`);
+  const langChoice = await askChoice(['1', '2', '3'], 'Select language (1-3):');
+  const languageMap: Record<string, string> = { '1': 'English', '2': 'Swedish', '3': '' };
+  const language = languageMap[langChoice];
+
+  // Model selection
+  console.log(chalk.bold('\n🤖 Select Gemini model:'));
+  console.log(`  1. ${chalk.cyan('gemini-2.0-flash')} (fast, recommended)`);
+  console.log(`  2. ${chalk.cyan('gemini-2.0-flash-lite')} (fastest, lightweight)`);
+  console.log(`  3. ${chalk.cyan('gemini-2.5-flash')} (latest, smart)`);
+  console.log(`  4. ${chalk.cyan('gemini-2.5-pro')} (most capable)`);
+  const modelChoiceNum = await askChoice(['1', '2', '3', '4'], 'Select model (1-4):');
+  const modelMap: Record<string, string> = {
+    '1': 'gemini-2.0-flash',
+    '2': 'gemini-2.0-flash-lite',
+    '3': 'gemini-2.5-flash',
+    '4': 'gemini-2.5-pro',
+  };
+  const modelChoice = modelMap[modelChoiceNum] || 'gemini-2.0-flash';
+
+  // Context
+  console.log(chalk.bold('\n💡 Context:'));
+  console.log(chalk.dim('  Describe the files to help the AI sort better (e.g., "university coursework", "vacation photos").'));
+  const context = await askInput('Context (press Enter to skip):');
+
+  // Folder structure
+  const usePreset = await askYesNo('\n📋 Do you want to provide a folder structure for the model to use?', false);
+  let preset: string | undefined;
+  if (usePreset) {
+    console.log(chalk.yellow('Describe the folder structure (e.g., "Year/Subject/Type", "Client/Project/Deliverable"):'));
+    preset = await askInput('Folder structure:');
+  }
+
   const useDatabase = await askYesNo('Use smart caching for faster results?', false);
 
   let dbPath: string | undefined;
   if (useDatabase) {
     dbPath = await askInput('Database path (press Enter for default):', 'sortoi_cache.db');
-    
+
     // 🔒 SECURITY: Sanitize database path too
     try {
       const pathValidator = new PathValidator();
@@ -120,6 +162,12 @@ export async function runInteractiveMode(): Promise<InteractiveOptions> {
     dryRun,
     useSubcategories,
     ...(dbPath && { dbPath }),
+    categorizationOptions: {
+      model: modelChoice,
+      ...(language && { language }),
+      ...(context && { context }),
+      ...(preset && { preset }),
+    }
   };
 }
 
@@ -171,6 +219,16 @@ export async function showSummary(options: InteractiveOptions, fileCount: number
   console.log(`${chalk.bold('📄 Files found:')} ${fileCount}`);
   console.log(`${chalk.bold('🔧 Mode:')} ${options.dryRun ? chalk.yellow('Preview (safe)') : chalk.green('Live organization')}`);
   console.log(`${chalk.bold('📁 Subcategories:')} ${options.useSubcategories ? 'Yes' : 'No'}`);
+  console.log(`${chalk.bold('🤖 Model:')} ${chalk.cyan(options.categorizationOptions.model || 'gemini-1.5-flash')}`);
+  if (options.categorizationOptions.language) {
+    console.log(`${chalk.bold('🌐 Language:')} ${chalk.cyan(options.categorizationOptions.language)}`);
+  }
+  if (options.categorizationOptions.context) {
+    console.log(`${chalk.bold('💡 Context:')} ${chalk.cyan(options.categorizationOptions.context)}`);
+  }
+  if (options.categorizationOptions.preset) {
+    console.log(`${chalk.bold('📋 Folder structure:')} ${chalk.cyan(options.categorizationOptions.preset)}`);
+  }
   console.log(`${chalk.bold('💾 Smart cache:')} ${options.dbPath ? 'Enabled' : 'Disabled'}`);
 
   if (options.dryRun) {

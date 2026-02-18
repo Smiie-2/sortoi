@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { setupCLI } from './app/cli.js';
-import { runInteractiveMode, showSummary } from './app/interactive.js';
+import { runInteractiveMode, showSummary, askYesNo } from './app/interactive.js';
 import { FileScanner } from './infrastructure/FileScanner.js';
 import { GeminiClient } from './infrastructure/GeminiClient.js';
 import { CategorizationService } from './core/CategorizationService.js';
@@ -32,10 +32,10 @@ async function runInteractiveMain() {
   try {
     const configService = new ConfigurationService();
     const apiKey = await configService.getApiKey(true);
-    
+
     const options = await runInteractiveMode();
-    logger.info('User selected options', { 
-      options: { ...options, dbPath: options.dbPath ? '***' : undefined } 
+    logger.info('User selected options', {
+      options: { ...options, dbPath: options.dbPath ? '***' : undefined }
     });
 
     if (options.json) {
@@ -80,7 +80,9 @@ async function runInteractiveMain() {
 
     logger.info('Starting AI categorization process');
     console.log(chalk.blue('\n🧠 Analyzing files with AI...'));
-    const categorizedFiles = await categorizationService.categorizeDirectory(options.directory);
+    const categorizedFiles = await categorizationService.categorizeDirectory(options.directory, {
+      categorizationOptions: options.categorizationOptions
+    });
     logger.info('Categorization completed', { categorizedCount: categorizedFiles.length });
 
     console.log(chalk.bold.magenta('\n🎯 Categorization Results:'));
@@ -92,9 +94,9 @@ async function runInteractiveMain() {
     await showSummary(options, files.length);
 
     logger.info('Starting file organization', { dryRun: options.dryRun });
-    console.log(chalk.blue('\n📂 Organizing files...'));
 
     if (!options.dryRun) {
+      console.log(chalk.blue('\n📂 Organizing files...'));
       const results = await fileOrganizer.organize(
         options.directory,
         categorizedFiles,
@@ -114,18 +116,48 @@ async function runInteractiveMain() {
       if (failed > 0) output.error(`✗ Failed: ${failed} files`);
       if (skipped > 0) output.warn(`⏭  Skipped: ${skipped} files (already exist)`);
     } else {
-      await categorizationService.moveFiles(categorizedFiles, {
-        dryRun: options.dryRun,
-        useSubcategories: options.useSubcategories,
-        baseDirectory: options.directory,
+      console.log(chalk.yellow('\n🛡️  Preview — proposed file moves:'));
+      categorizedFiles.forEach((file, index) => {
+        const fileName = file.path.split('\\').pop() || file.path.split('/').pop() || file.path;
+        const targetFolder = file.subcategory ? `${file.category}/${file.subcategory}` : file.category;
+        console.log(`  ${index + 1}. ${chalk.white(fileName)} → ${chalk.cyan(targetFolder + '/' + fileName)}`);
       });
+
+      const applyNow = await askYesNo('\n🚀 Apply these changes now?', false);
+      if (applyNow) {
+        console.log(chalk.blue('\n📂 Organizing files...'));
+        const results = await fileOrganizer.organize(
+          options.directory,
+          categorizedFiles,
+          ConflictStrategy.RENAME,
+          false,
+          sessionId
+        );
+
+        historyService.endSession(sessionId);
+        await historyService.save();
+
+        const successful = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+        const skipped = results.filter(r => r.skipped).length;
+
+        output.success(`✓ Moved: ${successful} files`);
+        if (failed > 0) output.error(`✗ Failed: ${failed} files`);
+        if (skipped > 0) output.warn(`⏭  Skipped: ${skipped} files (already exist)`);
+
+        options.dryRun = false; // Mark as applied for the completion message
+      }
     }
 
     metricsCollector.endOperation();
     metricsCollector.printSummary();
 
     logger.info('Process completed successfully');
-    console.log(chalk.bold.green('\n🎉 Organization complete! Your files are now perfectly sorted.'));
+    if (options.dryRun) {
+      console.log(chalk.bold.yellow('\n🛡️  Preview complete. No files were moved.'));
+    } else {
+      console.log(chalk.bold.green('\n🎉 Organization complete! Your files are now perfectly sorted.'));
+    }
 
   } catch (error) {
     throw new SortoiError('UNEXPECTED_ERROR', error);
@@ -156,7 +188,7 @@ async function main() {
       console.log(...args);
     }
   };
-  
+
   const [directory] = program.args;
 
   if (!directory) {
@@ -195,7 +227,15 @@ async function main() {
     await historyService.load();
     const sessionId = historyService.startSession();
 
-    const categorizedFiles = await categorizationService.categorizeDirectory(directory, { silent: true });
+    const categorizedFiles = await categorizationService.categorizeDirectory(directory, {
+      silent: true,
+      categorizationOptions: {
+        model: options.model,
+        language: options.language,
+        context: options.context,
+        preset: options.preset
+      }
+    });
 
     let results;
     if (!options.dryRun) {
@@ -229,7 +269,14 @@ async function main() {
   const sessionId = historyService.startSession();
 
   log(chalk.blue(`🔍 Scanning: ${directory}`));
-  const categorizedFiles = await categorizationService.categorizeDirectory(directory);
+  const categorizedFiles = await categorizationService.categorizeDirectory(directory, {
+    categorizationOptions: {
+      model: options.model,
+      language: options.language,
+      context: options.context,
+      preset: options.preset
+    }
+  });
 
   log(chalk.bold(`📄 Found ${categorizedFiles.length} files to organize`));
   log(chalk.bold.magenta('\n🎯 Categorization Results:'));
@@ -270,7 +317,11 @@ async function main() {
   metricsCollector.endOperation();
   metricsCollector.printSummary();
 
-  log(chalk.bold.green('\n🎉 Organization complete! Your files are now perfectly sorted.'));
+  if (options.dryRun) {
+    log(chalk.bold.yellow('\n🛡️  Preview complete. No files were moved. Run without --dry-run to apply changes.'));
+  } else {
+    log(chalk.bold.green('\n🎉 Organization complete! Your files are now perfectly sorted.'));
+  }
 }
 
 main().catch(error => {

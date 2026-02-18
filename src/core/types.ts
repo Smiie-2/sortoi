@@ -11,8 +11,15 @@ export interface IFileScanner {
   scan(directory: string): Promise<string[]>;
 }
 
+export interface CategorizationOptions {
+  model?: string;
+  language?: string;
+  context?: string;
+  preset?: string;
+}
+
 export interface ILLMClient {
-  categorize(filePath: string): Promise<CategorizedFile>;
+  categorize(filePath: string, options?: CategorizationOptions): Promise<CategorizedFile>;
 }
 
 export interface IDatabaseService {
