@@ -1,11 +1,13 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { ConfigurationService } from './ConfigurationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
+const configService = new ConfigurationService();
 
 async function createWindow() {
     mainWindow = new BrowserWindow({
@@ -52,3 +54,17 @@ app.on('window-all-closed', () => {
 
 // IPC Handlers
 ipcMain.handle('get-app-version', () => app.getVersion());
+
+ipcMain.handle('get-config', () => {
+    return configService.getConfig();
+});
+
+ipcMain.handle('set-config-value', (_event, key: string, value: any) => {
+    configService.set(key as any, value);
+    return true;
+});
+
+ipcMain.handle('reset-config', () => {
+    configService.reset();
+    return configService.getConfig();
+});
