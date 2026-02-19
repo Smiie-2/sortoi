@@ -36,12 +36,12 @@
     "clean:db": "node scripts/clean-db.js",
     "history": "tsx src/app/history.ts",
     "gui:dev": "run-p gui:dev:renderer gui:dev:main:watch gui:dev:main",
-    "gui:dev:renderer": "vite",
-    "gui:dev:main:watch": "tsc src/main/main.ts src/main/preload.ts --outDir dist/main --module nodenext --target esnext --moduleResolution nodenext --watch --preserveWatchOutput",
-    "gui:dev:main": "wait-on dist/main/main.js && cross-env NODE_ENV=development electron .",
+    "gui:dev:renderer": "vite --port 5173",
+    "gui:dev:main:watch": "tsc src/main/main.ts src/main/preload.ts --outDir dist --rootDir src --module nodenext --target esnext --moduleResolution nodenext --watch --preserveWatchOutput",
+    "gui:dev:main": "wait-on dist/main/main.js http://localhost:5173 && cross-env NODE_ENV=development electron .",
     "gui:build": "npm run gui:build:renderer && npm run gui:build:main",
     "gui:build:renderer": "vite build",
-    "gui:build:main": "tsc src/main/main.ts src/main/preload.ts --outDir dist/main --module nodenext --target esnext --moduleResolution nodenext",
+    "gui:build:main": "tsc src/main/main.ts src/main/preload.ts --outDir dist --rootDir src --module nodenext --target esnext --moduleResolution nodenext",
     "gui:package": "npm run gui:build && electron-builder"
   },
   "engines": {
