@@ -69,6 +69,20 @@
     "vitest": "^4.0.5",
     "wait-on": "^9.0.4"
   },
+  "build": {
+    "appId": "com.sortoi.app",
+    "productName": "Sortoi",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  },
   "dependencies": {
     "@ai-sdk/google": "^2.0.25",
     "@google/generative-ai": "^0.24.1",
