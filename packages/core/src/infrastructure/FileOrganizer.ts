@@ -1,36 +1,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import type { CategorizedFile } from '../core/types.js';
+import type { CategorizedFile, IFileOrganizer, FileOperationResult } from '../core/types.js';
 import { ConflictStrategy } from '../common/constants.js';
 import type { IConflictResolver } from './ConflictResolver.js';
 import type { IHistoryService } from './HistoryService.js';
 import logger from './Logger.js';
-
-export interface FileOperationResult {
-  success: boolean;
-  sourcePath: string;
-  destinationPath?: string;
-  error?: string;
-  skipped?: boolean;
-}
-
-export interface IFileOrganizer {
-  /**
-   * Organizes files by moving them to categorized directories
-   * @param baseDirectory - The root directory where categorized folders will be created
-   * @param categorizedFiles - Array of files with their categories
-   * @param conflictStrategy - How to handle file conflicts
-   * @param dryRun - If true, only simulates the operation without moving files
-   * @param sessionId - Optional session ID for history tracking
-   */
-  organize(
-    baseDirectory: string,
-    categorizedFiles: CategorizedFile[],
-    conflictStrategy: ConflictStrategy,
-    dryRun?: boolean,
-    sessionId?: string
-  ): Promise<FileOperationResult[]>;
-}
 
 export class FileOrganizer implements IFileOrganizer {
   constructor(
