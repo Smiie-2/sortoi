@@ -20,7 +20,7 @@
     "typescript"
   ],
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/main/main.js",
   "bin": {
     "sortoi": "dist/index.js"
   },
@@ -37,10 +37,10 @@
     "history": "tsx src/app/history.ts",
     "gui:dev": "run-p gui:dev:renderer gui:dev:main",
     "gui:dev:renderer": "vite",
-    "gui:dev:main": "electron .",
+    "gui:dev:main": "cross-env NODE_ENV=development electron .",
     "gui:build": "npm run gui:build:renderer && npm run gui:build:main",
     "gui:build:renderer": "vite build",
-    "gui:build:main": "tsc src/main/main.ts --outDir dist/main",
+    "gui:build:main": "tsc src/main/main.ts src/main/preload.ts --outDir dist/main --module nodenext --target esnext --moduleResolution nodenext",
     "gui:package": "npm run gui:build && electron-builder"
   },
   "engines": {
