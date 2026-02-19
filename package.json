@@ -82,6 +82,7 @@
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "inquirer": "^12.10.0",
+    "lucide-react": "^0.574.0",
     "p-limit": "^7.2.0",
     "winston": "^3.18.3",
     "zod": "^4.1.12"
