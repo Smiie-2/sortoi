@@ -2,14 +2,16 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ConfigurationService } from './ConfigurationService.js';
-import { FileScanner } from '../infrastructure/FileScanner.js';
-import { GeminiClient } from '../infrastructure/GeminiClient.js';
-import { CategorizationService } from '../core/CategorizationService.js';
-import { ConflictResolver } from '../infrastructure/ConflictResolver.js';
-import { FileOrganizer } from '../infrastructure/FileOrganizer.js';
-import { HistoryService } from '../infrastructure/HistoryService.js';
-import { ConsoleOutput } from '../infrastructure/ConsoleOutput.js';
-import { ConflictStrategy } from '../common/constants.js';
+import {
+    FileScanner,
+    GeminiClient,
+    CategorizationService,
+    ConflictResolver,
+    FileOrganizer,
+    HistoryService,
+    ConsoleOutput,
+    ConflictStrategy
+} from '@sortoi/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
