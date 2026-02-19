@@ -1,13 +1,24 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ConfigurationService } from './ConfigurationService.js';
+import { FileScanner } from '../infrastructure/FileScanner.js';
+import { GeminiClient } from '../infrastructure/GeminiClient.js';
+import { CategorizationService } from '../core/CategorizationService.js';
+import { ConflictResolver } from '../infrastructure/ConflictResolver.js';
+import { FileOrganizer } from '../infrastructure/FileOrganizer.js';
+import { HistoryService } from '../infrastructure/HistoryService.js';
+import { ConsoleOutput } from '../infrastructure/ConsoleOutput.js';
+import { ConflictStrategy } from '../common/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 const configService = new ConfigurationService();
+
+// Mock output to avoid terminal flooding but we could redirect to a separate log
+const silentOutput = new ConsoleOutput();
 
 async function createWindow() {
     mainWindow = new BrowserWindow({
@@ -67,4 +78,69 @@ ipcMain.handle('set-config-value', (_event, key: string, value: any) => {
 ipcMain.handle('reset-config', () => {
     configService.reset();
     return configService.getConfig();
+});
+
+ipcMain.handle('select-directory', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+        properties: ['openDirectory']
+    });
+    if (result.canceled) return null;
+    return result.filePaths[0];
+});
+
+ipcMain.handle('analyze-directory', async (_event, directory: string, options: any) => {
+    const apiKey = configService.get('apiKey');
+    const model = configService.get('model');
+
+    const fileScanner = new FileScanner();
+    const llmClient = new GeminiClient(apiKey);
+    const userDataPath = app.getPath('userData');
+    const historyService = new HistoryService(path.join(userDataPath, 'history'));
+    const conflictResolver = new ConflictResolver();
+    const fileOrganizer = new FileOrganizer(conflictResolver, historyService);
+
+    const progressReporter = {
+        start: (total: number) => mainWindow?.webContents.send('progress-update', { type: 'start', total }),
+        update: (current: number) => mainWindow?.webContents.send('progress-update', { type: 'update', current }),
+        increment: () => mainWindow?.webContents.send('progress-update', { type: 'increment' }),
+        stop: () => mainWindow?.webContents.send('progress-update', { type: 'stop' }),
+    };
+
+    const categorizer = new CategorizationService(
+        fileScanner,
+        llmClient,
+        silentOutput,
+        progressReporter,
+        fileOrganizer
+    );
+
+    return await categorizer.categorizeDirectory(directory, {
+        categorizationOptions: {
+            ...options,
+            model: options?.model || model
+        }
+    });
+});
+
+ipcMain.handle('organize-files', async (_event, directory: string, categorizedFiles: any[]) => {
+    const userDataPath = app.getPath('userData');
+    const historyService = new HistoryService(path.join(userDataPath, 'history'));
+    const conflictResolver = new ConflictResolver();
+    const fileOrganizer = new FileOrganizer(conflictResolver, historyService);
+
+    await historyService.load();
+    const sessionId = historyService.startSession();
+
+    const results = await fileOrganizer.organize(
+        directory,
+        categorizedFiles,
+        ConflictStrategy.RENAME,
+        false,
+        sessionId
+    );
+
+    historyService.endSession(sessionId);
+    await historyService.save();
+
+    return results;
 });

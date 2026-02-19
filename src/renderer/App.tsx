@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Layout from './components/Layout';
+import SortView from './components/SortView';
 
 function App() {
     const [version, setVersion] = useState<string>('...');
@@ -14,25 +15,7 @@ function App() {
     const renderView = () => {
         switch (activeView) {
             case 'sort':
-                return (
-                    <div>
-                        <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }} className="glow-text">Smart Sort</h2>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                            Upload a folder to begin organizing your files with AI-powered categorization.
-                        </p>
-
-                        <div style={{
-                            border: '2px dashed var(--border-glass)',
-                            borderRadius: '16px',
-                            padding: '4rem 2rem',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'border-color 0.2s'
-                        }}>
-                            <p style={{ color: 'var(--text-secondary)' }}>Click to select a directory or drag and drop here</p>
-                        </div>
-                    </div>
-                );
+                return <SortView />;
             case 'history':
                 return (
                     <div>
