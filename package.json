@@ -35,9 +35,10 @@
     "start": "node dist/index.js",
     "clean:db": "node scripts/clean-db.js",
     "history": "tsx src/app/history.ts",
-    "gui:dev": "run-p gui:dev:renderer gui:dev:main",
+    "gui:dev": "run-p gui:dev:renderer gui:dev:main:watch gui:dev:main",
     "gui:dev:renderer": "vite",
-    "gui:dev:main": "cross-env NODE_ENV=development electron .",
+    "gui:dev:main:watch": "tsc src/main/main.ts src/main/preload.ts --outDir dist/main --module nodenext --target esnext --moduleResolution nodenext --watch --preserveWatchOutput",
+    "gui:dev:main": "wait-on dist/main/main.js && cross-env NODE_ENV=development electron .",
     "gui:build": "npm run gui:build:renderer && npm run gui:build:main",
     "gui:build:renderer": "vite build",
     "gui:build:main": "tsc src/main/main.ts src/main/preload.ts --outDir dist/main --module nodenext --target esnext --moduleResolution nodenext",
@@ -65,7 +66,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.5",
+    "wait-on": "^9.0.4"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.25",
