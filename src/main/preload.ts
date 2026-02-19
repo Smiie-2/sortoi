@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld('electron', {
     analyzeDirectory: (directory: string, options: any) => ipcRenderer.invoke('analyze-directory', directory, options),
     organizeFiles: (directory: string, files: any[]) => ipcRenderer.invoke('organize-files', directory, files),
     onProgress: (callback: any) => ipcRenderer.on('progress-update', (_event, data) => callback(data)),
+    getHistory: () => ipcRenderer.invoke('get-history'),
+    rollbackSession: (sessionId: string) => ipcRenderer.invoke('rollback-session', sessionId),
 });

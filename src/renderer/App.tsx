@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Layout from './components/Layout';
 import SortView from './components/SortView';
+import HistoryView from './components/HistoryView';
+import SettingsView from './components/SettingsView';
 
 function App() {
     const [version, setVersion] = useState<string>('...');
@@ -17,31 +19,9 @@ function App() {
             case 'sort':
                 return <SortView />;
             case 'history':
-                return (
-                    <div>
-                        <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }} className="glow-text">History</h2>
-                        <p style={{ color: 'var(--text-secondary)' }}>Your recent sorting sessions and rollbacks will appear here.</p>
-                    </div>
-                );
+                return <HistoryView />;
             case 'settings':
-                return (
-                    <div>
-                        <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }} className="glow-text">Settings</h2>
-                        <div style={{ marginTop: '2rem' }}>
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Model</label>
-                                <div style={{
-                                    padding: '0.75rem',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--border-glass)'
-                                }}>
-                                    {config?.model || 'Loading...'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
+                return <SettingsView />;
             default:
                 return <div>View not found</div>;
         }

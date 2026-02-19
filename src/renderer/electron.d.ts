@@ -7,6 +7,8 @@ export interface IElectronAPI {
     analyzeDirectory: (directory: string, categorizationOptions?: any) => Promise<any[]>;
     organizeFiles: (directory: string, categorizedFiles: any[]) => Promise<any>;
     onProgress: (callback: (data: any) => void) => void;
+    getHistory: () => Promise<any[]>;
+    rollbackSession: (sessionId: string) => Promise<any>;
 }
 
 declare global {

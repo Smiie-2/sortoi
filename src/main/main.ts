@@ -144,3 +144,19 @@ ipcMain.handle('organize-files', async (_event, directory: string, categorizedFi
 
     return results;
 });
+
+ipcMain.handle('get-history', async () => {
+    const userDataPath = app.getPath('userData');
+    const historyService = new HistoryService(path.join(userDataPath, 'history'));
+    await historyService.load();
+    return historyService.getAllSessions();
+});
+
+ipcMain.handle('rollback-session', async (_event, sessionId: string) => {
+    const userDataPath = app.getPath('userData');
+    const historyService = new HistoryService(path.join(userDataPath, 'history'));
+    await historyService.load();
+    const result = await historyService.rollback(sessionId);
+    await historyService.save();
+    return result;
+});
